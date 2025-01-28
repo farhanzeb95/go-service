@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go-web-service/models/controllers"
+	"go-web-service/controllers"
 	"net/http"
 )
 
