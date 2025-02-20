@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"go-web-service/models"
 	"io"
 	"net/http"
@@ -26,9 +25,8 @@ func (userController userController) ServeHTTP(w http.ResponseWriter, r *http.Re
 		}
 	} else {
 		matches := userController.userIdPattern.FindStringSubmatch(r.URL.Path)
-		fmt.Println(matches)
 
-		if len(matches) < 2 { // Ensure at least two elements before accessing matches[1]
+		if len(matches) < 2 {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -45,7 +43,7 @@ func (userController userController) ServeHTTP(w http.ResponseWriter, r *http.Re
 		case http.MethodPut:
 			userController.UpdateUser(id, w, r)
 		case http.MethodDelete:
-			panic("method not implemented")
+			userController.RemoveUser(id, w, r)
 		default:
 			w.WriteHeader(http.StatusNotImplemented)
 		}
@@ -69,7 +67,6 @@ func encodeResponseAsJSON(data interface{}, w io.Writer) {
 }
 
 func (userController userController) getUserById(id int, w http.ResponseWriter) {
-	fmt.Println(id)
 	user, error := models.GerUserById(id)
 
 	if error != nil {
@@ -115,15 +112,29 @@ func parseRequest(r *http.Request) (models.User, error) {
 }
 
 func (userController userController) UpdateUser(id int, w http.ResponseWriter, r *http.Request) {
-	panic("method not implemented")
+	updatedUser, error := parseRequest(r)
+
+	if error != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Could not pasrse the object"))
+	}
+
+	updatedUser.ID = id
+	updatedUser, error = models.UpdatedUserById(updatedUser)
+
+	if error != nil {
+		w.Write([]byte(error.Error()))
+	}
+
+	encodeResponseAsJSON(updatedUser, w)
 }
 
-func (userController userController) RemoveUser(w http.ResponseWriter, r *http.Request) {
-	panic("method not implemented")
-}
+func (userController userController) RemoveUser(id int, w http.ResponseWriter, r *http.Request) {
+	user, error := models.RemoveUserByID(id)
 
-// func newUserController() *userController {
-// 	return &userController{
-// 		userIdPattern: regexp.MustCompile(`^/users/(/d)/?`),
-// 	}
-// }
+	if error != nil {
+		w.Write([]byte(error.Error()))
+	}
+
+	encodeResponseAsJSON(user, w)
+}
